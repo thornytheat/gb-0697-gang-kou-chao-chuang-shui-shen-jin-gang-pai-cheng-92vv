@@ -4,7 +4,15 @@
 
 ## 核心计算
 
-潮位线性插值求达到最低水深的时刻区间，与航道占用和引航窗口求交，安全端点含义明确。
+外海、内港、锚地三站各自独立成线，安全水深取各站包络（最小值），避免读数偏高的站把船放进不够深的时段；缺第三站时窗口降级为临时窗、可发船但须人工复核。潮位线性插值求达到最低水深的时刻区间，与航道占用和引航窗口求交，安全端点含义明确。逐时刻记录采信站与缺证旁证。
+
+## 多站采信与失效链
+
+- 表头含 `station` 列；跨站同时刻差异按潮时差处理，不再合并成一条曲线。未知站点隔离为 `STATION`。
+- 采信等级：`CONFIRMED`（三站齐）、`PROVISIONAL`（缺锚地旁证）、`WEAK`（缺必备站，不外推）。
+- 内外港潮时差按高/低潮转折点核对名义半小时，偏差超 5 分钟告警，系统只登记不平移。
+- 读数更正（同站同时刻更高版本）后，原批次安全窗经 `run_links` 失效链标记为“已失效-读数更正”并重算。
+- 同一输入内容重跑复用同一批次（内容寻址 + UNIQUE），绝不重复建批。
 
 ## 启动
 
@@ -14,7 +22,7 @@ docker compose exec -T app pytest -q
 docker compose config --quiet
 ```
 
-浏览器访问 http://localhost:18211 。默认载入仓内样例。工具条可选择CSV文件运行；样例文件位于 `sample_data/instrument.csv`。重复执行同一内容复用同一批次。
+浏览器访问 http://localhost:18211 。默认载入仓内样例。工具条可选择CSV文件运行；样例文件位于 `sample_data/instrument.csv`（含同内容 GB18030 版）。重复执行同一内容复用同一批次。
 
 ## 模块
 
@@ -28,7 +36,7 @@ docker compose config --quiet
 
 ## 输入与输出
 
-CSV可用UTF-8或GB18030；上传保留字符串编号和物理行号。POST `/api/run` 接收 `text` 字段。`GET /api/runs` 查询历史，`POST /api/review` 接收 id、revision、decision。导出按钮下载唯一证据CSV，含运行摘要与隔离记录。
+CSV可用UTF-8或GB18030；上传保留字符串编号和物理行号。POST `/api/run` 接收 `text` 字段。`GET /api/runs` 查询历史，`POST /api/review` 接收 id、revision、decision。导出按钮下载多段证据CSV：安全窗采信明细（站点+来源行+原始读数）、逐时刻采信时间轴、潮时差核对、读数更正、批次失效链、排程与隔离记录。
 
 SQLite命名卷保存运行记录。重建演示数据可更换卷名后重启。无需外部网络数据。规则定义见 `docs/DATA-DICTIONARY.md`；边界和测试对应关系见 `docs/DEPTH.md`。
 

@@ -7,7 +7,7 @@ import pytest
 
 def test_change_revision(sample):
     from app.pipeline import run
-    r=run(sample+"SHIP01,ship,2026-11-18T00:00:00Z,2026-11-18T20:00:00Z,8,30,2,m\n")
+    r=run(sample+"SHIP01,,ship,2026-11-18T00:00:00Z,2026-11-18T20:00:00Z,8,30,2,m\n")
     change=next(x for x in r["change_log"] if x["id"]=="SHIP01")
     assert change["superseded_versions"]==[1] and change["revision_delta"]==1 and change["status"]=="REPLACED"
 

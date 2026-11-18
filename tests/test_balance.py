@@ -14,7 +14,7 @@ def test_balance_empty():
     assert overlaps([])==[]
 
 def test_balance_sample(result):
-    assert result["balance"]["input"]==60
+    assert result["balance"]["input"]==121
 
 def test_balance_reason(result):
     assert result["balance"]["quarantined"]==4
